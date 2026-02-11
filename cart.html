@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - BRKN</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .brand-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: 2px;
+        }
+
+        .back-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            transition: opacity 0.3s ease;
+        }
+
+        .back-link:hover {
+            opacity: 0.7;
+        }
+
+        /* Main Content */
+        .cart-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 120px 40px 60px;
+        }
+
+        .page-title {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 40px;
+            letter-spacing: -0.02em;
+        }
+
+        .cart-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 40px;
+        }
+
+        /* Cart Items */
+        .cart-items-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+        }
+
+        .cart-item {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .item-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item-name {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .item-price {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .quantity-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .quantity-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .quantity-value {
+            font-size: 16px;
+            font-weight: 600;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #ff3b30;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+            transition: opacity 0.3s ease;
+        }
+
+        .remove-btn:hover {
+            opacity: 0.7;
+        }
+
+        /* Order Summary */
+        .order-summary {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            height: fit-content;
+            position: sticky;
+            top: 120px;
+        }
+
+        .summary-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .summary-row:last-of-type {
+            border-bottom: none;
+            padding-top: 20px;
+            margin-top: 10px;
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 25px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkout-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .checkout-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .checkout-btn.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .checkout-btn.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 80px 20px;
+            opacity: 0.6;
+        }
+
+        .empty-cart-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-cart p {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+
+        .continue-shopping {
+            display: inline-block;
+            padding: 14px 30px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .continue-shopping:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+        }
+
+        /* Success Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 50px;
+            text-align: center;
+            max-width: 500px;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+
+        .modal-content h2 {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        .modal-btn {
+            padding: 14px 30px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .cart-content {
+                grid-template-columns: 1fr;
+            }
+
+            .order-summary {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cart-container {
+                padding: 100px 20px 40px;
+            }
+
+            .page-title {
+                font-size: 36px;
+            }
+
+            .cart-item {
+                flex-direction: column;
+            }
+
+            .item-image {
+                width: 100%;
+                height: 200px;
+            }
+
+            .remove-btn {
+                position: static;
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <a href="brkn_website.html" class="brand-logo">BRKN</a>
+        <a href="brkn_website.html" class="back-link">← Continue Shopping</a>
+    </header>
+
+    <!-- Main Content -->
+    <div class="cart-container">
+        <h1 class="page-title">Shopping Cart</h1>
+
+        <div class="cart-content" id="cartContent">
+            <!-- Cart items will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="success-icon">✓</div>
+            <h2>Order Placed Successfully!</h2>
+            <p>Your order has been submitted and will be processed shortly.</p>
+            <button class="modal-btn" onclick="window.location.href='brkn_website.html'">Continue Shopping</button>
+        </div>
+    </div>
+
+    <script>
+        class CartPage {
+            constructor() {
+                this.CART_KEY = 'brkn_cart';
+                this.cart = [];
+                this.init();
+            }
+
+            init() {
+                this.loadCart();
+                this.renderCart();
+            }
+
+            loadCart() {
+                const saved = localStorage.getItem(this.CART_KEY);
+                if (saved) {
+                    this.cart = JSON.parse(saved);
+                }
+            }
+
+            saveCart() {
+                localStorage.setItem(this.CART_KEY, JSON.stringify(this.cart));
+            }
+
+            updateQuantity(productId, change) {
+                const item = this.cart.find(item => item.id === productId);
+                if (item) {
+                    item.quantity += change;
+                    if (item.quantity <= 0) {
+                        this.removeItem(productId);
+                    } else {
+                        this.saveCart();
+                        this.renderCart();
+                    }
+                }
+            }
+
+            removeItem(productId) {
+                this.cart = this.cart.filter(item => item.id !== productId);
+                this.saveCart();
+                this.renderCart();
+            }
+
+            getSubtotal() {
+                return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            }
+
+            getTax() {
+                return this.getSubtotal() * 0.18; // 18% GST for India
+            }
+
+            getShipping() {
+                return this.cart.length > 0 ? 150 : 0; // ₹150 shipping
+            }
+
+            getTotal() {
+                return this.getSubtotal() + this.getTax() + this.getShipping();
+            }
+
+            renderCart() {
+                const container = document.getElementById('cartContent');
+
+                if (this.cart.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-cart" style="grid-column: 1 / -1;">
+                            <div class="empty-cart-icon">🛒</div>
+                            <p>Your cart is empty</p>
+                            <a href="brkn_website.html" class="continue-shopping">Start Shopping</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const itemsHTML = this.cart.map(item => `
+                    <div class="cart-item">
+                        <img src="${item.image}" alt="${item.name}" class="item-image">
+                        <div class="item-details">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-price">₹${item.price.toLocaleString('en-IN')}</div>
+                            <div class="item-quantity">
+                                <button class="quantity-btn" onclick="cartPage.updateQuantity(${item.id}, -1)">-</button>
+                                <span class="quantity-value">${item.quantity}</span>
+                                <button class="quantity-btn" onclick="cartPage.updateQuantity(${item.id}, 1)">+</button>
+                            </div>
+                        </div>
+                        <button class="remove-btn" onclick="cartPage.removeItem(${item.id})">Remove</button>
+                    </div>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="cart-items-section">
+                        ${itemsHTML}
+                    </div>
+
+                    <div class="order-summary">
+                        <h2 class="summary-title">Order Summary</h2>
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>₹${this.getSubtotal().toLocaleString('en-IN')}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax (18%)</span>
+                            <span>₹${this.getTax().toLocaleString('en-IN')}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Shipping</span>
+                            <span>₹${this.getShipping().toLocaleString('en-IN')}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Total</span>
+                            <span>₹${this.getTotal().toLocaleString('en-IN')}</span>
+                        </div>
+                        <button class="checkout-btn" onclick="cartPage.checkout()">Proceed to Checkout</button>
+                    </div>
+                `;
+            }
+
+            async checkout() {
+                if (this.cart.length === 0) {
+                    alert('Your cart is empty!');
+                    return;
+                }
+
+                const button = document.querySelector('.checkout-btn');
+                button.classList.add('loading');
+                button.disabled = true;
+
+                try {
+                    // Prepare order data
+                    const orderData = {
+                        items: this.cart,
+                        subtotal: this.getSubtotal(),
+                        tax: this.getTax(),
+                        shipping: this.getShipping(),
+                        total: this.getTotal(),
+                        orderDate: new Date().toISOString(),
+                        status: 'pending'
+                    };
+
+                    // DATABASE UPLOAD ENDPOINT #1 - Create Order
+                    // Replace with your actual API endpoint
+                    const createOrderResponse = await fetch('/api/orders/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // Add authentication headers if needed
+                            // 'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify(orderData)
+                    });
+
+                    if (!createOrderResponse.ok) {
+                        throw new Error('Failed to create order');
+                    }
+
+                    const orderResult = await createOrderResponse.json();
+                    const orderId = orderResult.orderId;
+
+                    // DATABASE UPLOAD ENDPOINT #2 - Upload Order Items
+                    // Replace with your actual API endpoint
+                    const uploadItemsResponse = await fetch('/api/orders/items/bulk', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            orderId: orderId,
+                            items: this.cart.map(item => ({
+                                productId: item.id,
+                                productName: item.name,
+                                price: item.price,
+                                quantity: item.quantity,
+                                image: item.image
+                            }))
+                        })
+                    });
+
+                    if (!uploadItemsResponse.ok) {
+                        throw new Error('Failed to upload order items');
+                    }
+
+                    // DATABASE UPLOAD ENDPOINT #3 - Update Inventory
+                    // Replace with your actual API endpoint
+                    const updateInventoryResponse = await fetch('/api/inventory/update', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            updates: this.cart.map(item => ({
+                                productId: item.id,
+                                quantityChange: -item.quantity
+                            }))
+                        })
+                    });
+
+                    if (!updateInventoryResponse.ok) {
+                        console.warn('Failed to update inventory');
+                    }
+
+                    // Success - Clear cart and show confirmation
+                    this.cart = [];
+                    this.saveCart();
+
+                    document.getElementById('successModal').classList.add('show');
+
+                } catch (error) {
+                    console.error('Checkout error:', error);
+                    alert('There was an error processing your order. Please try again.');
+                } finally {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                }
+            }
+        }
+
+        // Initialize cart page
+        const cartPage = new CartPage();
+    </script>
+</body>
+</html>

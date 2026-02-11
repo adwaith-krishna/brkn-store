@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Address | BRKN</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .brand-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: 2px;
+        }
+
+        .checkout-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            flex: 1;
+        }
+
+        .checkout-progress {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .checkout-progress::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 0;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            height: 2px;
+            background: #fff;
+            z-index: 1;
+            transition: width 0.3s ease;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .progress-step.active .step-circle {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        .progress-step.completed .step-circle {
+            background: rgba(52, 199, 89, 0.2);
+            border-color: rgba(52, 199, 89, 0.6);
+            color: #34c759;
+        }
+
+        .step-label {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .progress-step.active .step-label {
+            opacity: 1;
+        }
+
+        .checkout-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .saved-addresses {
+            margin-bottom: 30px;
+        }
+
+        .address-option {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .address-option:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .address-option.selected {
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .address-option input[type="radio"] {
+            margin-right: 15px;
+        }
+
+        .order-summary {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 25px;
+        }
+
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .error-message {
+            color: #ff3b30;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .checkout-card {
+                padding: 25px 20px;
+            }
+
+            .btn-container {
+                flex-direction: column-reverse;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="brkn_website.html" class="brand-logo">BRKN</a>
+    </header>
+
+    <div class="checkout-container">
+        <!-- Progress Bar -->
+        <div class="checkout-progress">
+            <div class="progress-line" id="progressLine" style="width: 0%"></div>
+            <div class="progress-step active">
+                <div class="step-circle">1</div>
+                <span class="step-label">Address</span>
+            </div>
+            <div class="progress-step">
+                <div class="step-circle">2</div>
+                <span class="step-label">Payment</span>
+            </div>
+            <div class="progress-step">
+                <div class="step-circle">3</div>
+                <span class="step-label">Confirm</span>
+            </div>
+        </div>
+
+        <!-- Shipping Address Form -->
+        <div class="checkout-card">
+            <h2 class="card-title">Shipping Address</h2>
+
+            <!-- Saved Addresses (if user is logged in) -->
+            <div class="saved-addresses" id="savedAddresses" style="display: none;">
+                <h3 style="font-size: 16px; margin-bottom: 15px;">Saved Addresses</h3>
+                <!-- Saved addresses will be populated here from backend -->
+            </div>
+
+            <!-- Address Form -->
+            <form id="addressForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name *</label>
+                        <input type="text" class="form-input" id="firstName" name="firstName" required>
+                        <span class="error-message" id="firstNameError">Please enter your first name</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name *</label>
+                        <input type="text" class="form-input" id="lastName" name="lastName" required>
+                        <span class="error-message" id="lastNameError">Please enter your last name</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address *</label>
+                    <input type="email" class="form-input" id="email" name="email" required>
+                    <span class="error-message" id="emailError">Please enter a valid email</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number *</label>
+                    <input type="tel" class="form-input" id="phone" name="phone" required>
+                    <span class="error-message" id="phoneError">Please enter a valid phone number</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Street Address *</label>
+                    <input type="text" class="form-input" id="address1" name="address1" placeholder="House number and street name" required>
+                    <span class="error-message" id="address1Error">Please enter your street address</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Apartment, suite, etc. (optional)</label>
+                    <input type="text" class="form-input" id="address2" name="address2">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">City *</label>
+                        <input type="text" class="form-input" id="city" name="city" required>
+                        <span class="error-message" id="cityError">Please enter your city</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State / Province *</label>
+                        <input type="text" class="form-input" id="state" name="state" required>
+                        <span class="error-message" id="stateError">Please enter your state</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">ZIP / Postal Code *</label>
+                        <input type="text" class="form-input" id="zipCode" name="zipCode" required>
+                        <span class="error-message" id="zipCodeError">Please enter your ZIP code</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country *</label>
+                        <input type="text" class="form-input" id="country" name="country" value="United States" required>
+                        <span class="error-message" id="countryError">Please enter your country</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h3 class="summary-title">Order Summary</h3>
+            <div id="orderItems">
+                <!-- Cart items will be loaded here -->
+            </div>
+            <div class="summary-total">
+                <span>Total:</span>
+                <span id="orderTotal">₹0.00</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-container">
+            <button class="btn btn-secondary" onclick="window.location.href='brkn_website.html'">Back to Shop</button>
+            <button class="btn btn-primary" id="continueBtn">Continue to Payment</button>
+        </div>
+    </div>
+
+    <script>
+        // Load cart data and populate order summary
+        function loadCartData() {
+            const cartData = localStorage.getItem('brkn_cart');
+            if (!cartData) {
+                alert('Your cart is empty!');
+                window.location.href = 'brkn_website.html';
+                return;
+            }
+
+            const cart = JSON.parse(cartData);
+            const orderItemsContainer = document.getElementById('orderItems');
+            const orderTotalElement = document.getElementById('orderTotal');
+
+            // Display cart items
+            let total = 0;
+            let itemsHTML = '';
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                itemsHTML += `
+                    <div class="summary-item">
+                        <span>${item.name} × ${item.quantity}</span>
+                        <span>₹${itemTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                `;
+            });
+
+            orderItemsContainer.innerHTML = itemsHTML;
+            orderTotalElement.textContent = `₹${total.toLocaleString('en-IN')}`;
+        }
+
+        // Form validation
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address1', 'city', 'state', 'zipCode', 'country'];
+
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                const error = document.getElementById(fieldId + 'Error');
+
+                if (!field.value.trim()) {
+                    error.classList.add('show');
+                    field.style.borderColor = '#ff3b30';
+                    isValid = false;
+                } else {
+                    error.classList.remove('show');
+                    field.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                }
+            });
+
+            // Email validation
+            const emailField = document.getElementById('email');
+            const emailError = document.getElementById('emailError');
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (emailField.value && !emailPattern.test(emailField.value)) {
+                emailError.textContent = 'Please enter a valid email address';
+                emailError.classList.add('show');
+                emailField.style.borderColor = '#ff3b30';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Handle continue to payment
+        document.getElementById('continueBtn').addEventListener('click', async function() {
+            if (!validateForm()) {
+                alert('Please fill in all required fields correctly.');
+                return;
+            }
+
+            // Collect form data
+            const addressData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address1: document.getElementById('address1').value,
+                address2: document.getElementById('address2').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                zipCode: document.getElementById('zipCode').value,
+                country: document.getElementById('country').value
+            };
+
+            // Save address to localStorage (for now)
+            localStorage.setItem('brkn_checkout_address', JSON.stringify(addressData));
+
+            // BACKEND INTEGRATION POINT: Save address to database
+            // API Endpoint: POST /api/checkout/address
+            // Expected Request Body: { userId: 123, address: {...addressData} }
+            // Expected Response: { success: true, addressId: 456, shippingOptions: [...] }
+            /*
+            Example Backend Call:
+            try {
+                const response = await fetch('/api/checkout/address', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    },
+                    body: JSON.stringify({
+                        userId: getCurrentUserId(), // Get from auth
+                        address: addressData,
+                        saveAddress: true // Option to save for future use
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Save address ID for payment step
+                    localStorage.setItem('brkn_address_id', data.addressId);
+
+                    // Calculate shipping cost based on address
+                    localStorage.setItem('brkn_shipping_options', JSON.stringify(data.shippingOptions));
+
+                    // Proceed to payment
+                    window.location.href = 'checkout-payment.html';
+                } else {
+                    alert('Error saving address: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to save address. Please try again.');
+            }
+            */
+
+            // For now, proceed directly to payment
+            window.location.href = 'checkout-payment.html';
+        });
+
+        // BACKEND INTEGRATION POINT: Load saved addresses for logged-in users
+        // API Endpoint: GET /api/user/addresses
+        // Expected Response: { addresses: [{id, firstName, lastName, address1, city, ...}, ...] }
+        /*
+        async function loadSavedAddresses() {
+            try {
+                const response = await fetch('/api/user/addresses', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.addresses && data.addresses.length > 0) {
+                    const container = document.getElementById('savedAddresses');
+                    container.style.display = 'block';
+
+                    data.addresses.forEach(address => {
+                        // Create address option elements
+                        const option = document.createElement('div');
+                        option.className = 'address-option';
+                        option.innerHTML = `
+                            <input type="radio" name="savedAddress" value="${address.id}">
+                            <strong>${address.firstName} ${address.lastName}</strong><br>
+                            ${address.address1}, ${address.city}, ${address.state} ${address.zipCode}
+                        `;
+                        container.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading saved addresses:', error);
+            }
+        }
+        */
+
+        // Initialize page
+        window.addEventListener('DOMContentLoaded', function() {
+            loadCartData();
+            // loadSavedAddresses(); // Uncomment when backend is ready
+
+            // Update progress bar
+            document.getElementById('progressLine').style.width = '0%';
+        });
+
+        // Auto-fill for testing (remove in production)
+        window.fillTestData = function() {
+            document.getElementById('firstName').value = 'John';
+            document.getElementById('lastName').value = 'Doe';
+            document.getElementById('email').value = 'john.doe@example.com';
+            document.getElementById('phone').value = '+1 (555) 123-4567';
+            document.getElementById('address1').value = '123 Main Street';
+            document.getElementById('city').value = 'Los Angeles';
+            document.getElementById('state').value = 'California';
+            document.getElementById('zipCode').value = '90001';
+            document.getElementById('country').value = 'United States';
+        };
+    </script>
+</body>
+</html>
