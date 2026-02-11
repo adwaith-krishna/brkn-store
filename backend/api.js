@@ -3,7 +3,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import cookieParser from 'cookie-parser';
+import path from 'path'; // ⬅️ ADD THIS
+import { fileURLToPath } from 'url';
 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // --- Setup ---
 dotenv.config();
 const app = express();
@@ -11,11 +16,15 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// --- Middleware ---
+
 // --- Middleware ---
 app.use(cors({
-    // Allow the Live Server IP, the Localhost alias, and 'null' for local file opening
-    origin: ['http://127.0.0.1:5500', 'http://localhost:5500', 'null'], 
+    // ⚠️ UPDATE: Add your actual Vercel URL here once deployed
+    origin: [
+        'http://127.0.0.1:5500', 
+        'http://localhost:5500', 
+        'https://brkn-store.vercel.app' 
+    ], 
     credentials: true 
 }));
 app.use(cookieParser());
@@ -23,6 +32,17 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 console.log("✅ Express middleware configured.");
+
+app.use(express.static(__dirname));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'brkn_website.html'));
+});
+
+// Route for the login page
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
 
 // ===================================
 // --- (NEW) STOREFRONT AUTH ROUTES ---
@@ -390,9 +410,11 @@ app.get('/api/overview', authenticateAdmin, async (req, res) => {
 
 // --- Start Server ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Backend server (with HttpOnly cookies) running on http://localhost:${PORT}`);
-});
-
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`🚀 Backend running on http://localhost:${PORT}`);
+    });
+}
+export default app;
 
 
