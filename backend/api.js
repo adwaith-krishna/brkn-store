@@ -7,8 +7,17 @@ import path from 'path'; // ⬅️ ADD THIS
 import { fileURLToPath } from 'url';
 
 
+// --- ESM path Fix ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// ... setup code ...
+
+// Change this line:
+app.use(express.static(__dirname)); 
+
+// To this (more precise for Vercel):
+app.use(express.static(path.join(__dirname, '/')));
 // --- Setup ---
 dotenv.config();
 const app = express();
