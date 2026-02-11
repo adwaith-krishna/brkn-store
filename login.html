@@ -569,253 +569,206 @@
  </script>
 
  <script>
-    class AccountPage {
-        constructor() {
-            // --- Configuration ---
-            // ⚠️ Make sure this uses 127.0.0.1 if your backend CORS is set to that
-            this.API_URL = 'http://127.0.0.1:3000'; 
+   class AccountPage {
+    constructor() {
+        // --- 1. DYNAMIC API URL ---
+        // Automatically switches between your local machine and Vercel
+        this.API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://127.0.0.1:3000'
+            : 'https://brkn-store.vercel.app'; // ⚠️ Change this if your Vercel URL is different
 
-            // --- STATE ---
-            this.currentUser = null;
-            this.userProfile = null;
+        this.currentUser = null;
+        this.userProfile = null;
 
-            // --- BIND METHODS ---
-            this.handleLogin = this.handleLogin.bind(this);
-            this.handleRegister = this.handleRegister.bind(this);
-            this.logout = this.logout.bind(this);
-            this.switchTab = this.switchTab.bind(this);
+        this.handleLogin = this.handleLogin.bind(this);
+        this.handleRegister = this.handleRegister.bind(this);
+        this.logout = this.logout.bind(this);
+        this.switchTab = this.switchTab.bind(this);
 
-            this.init(); // Start the initialization
-        }
+        this.init();
+    }
 
-        async init() {
-            console.log("Initializing Storefront Account Page...");
-            this.setupForms();
-            await this.checkAuth(); // Check for existing session
-        }
-        
-        async checkAuth() {
-            try {
-                // Call the /store/me endpoint to get session data
-                const response = await fetch(`${this.API_URL}/store/me`, {
-                    credentials: 'include' // Send cookies
-                });
-                
-                if (!response.ok) {
-                    // This is normal, just means no one is logged in
-                    if (response.status === 401) {
-                         console.log("No active storefront session found.");
-                    }
-                    throw new Error('No session');
-                }
-                
-                const { user } = await response.json();
-                if (user) {
-                    console.log("Session restored for:", user.email);
-                    this.currentUser = user; // This is the full user object
-                    this.userProfile = user.profile;
-                    this.showDashboard();
-                } else {
-                     this.handleUserLoggedOut();
-                }
-            } catch (error) {
-                 this.handleUserLoggedOut();
-            }
-        }
-
-        setupForms() {
-            const loginForm = document.getElementById('loginForm');
-            const registerForm = document.getElementById('registerForm');
-
-            if (loginForm) loginForm.addEventListener('submit', this.handleLogin);
-            if (registerForm) registerForm.addEventListener('submit', this.handleRegister);
-        }
-
-        switchTab(tab) {
-            document.querySelectorAll('.auth-tab').forEach(btn => btn.classList.remove('active'));
-            const clickedButton = document.querySelector(`.auth-tab[onclick*="'${tab}'"]`);
-            if (clickedButton) clickedButton.classList.add('active');
-
-            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-            const targetForm = document.getElementById(tab === 'login' ? 'loginForm' : 'registerForm');
-            if (targetForm) targetForm.classList.add('active');
-            this.hideError();
-        }
-
-        // This is now called by onAuthStateChange logic (or checkAuth)
-        handleUserLoggedIn() {
-            this.showDashboard();
-        }
-
-        handleUserLoggedOut() {
-            console.log("Handling storefront user logged out.");
-            this.currentUser = null;
-            this.userProfile = null;
-            this.showAuthView(); // Show the login/register forms
-            document.getElementById('loginForm')?.reset();
-            document.getElementById('registerForm')?.reset();
-        }
-
-        async handleLogin(event) {
-            event.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const button = event.target.querySelector('.submit-btn');
-
-            if (!email || !password) { this.showError('Please enter both email and password.'); return; }
-            button.classList.add('loading'); button.disabled = true; this.hideError();
-
-            try {
-                // Call YOUR backend's /store/login route
-                const response = await fetch(`${this.API_URL}/store/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password }),
-                    credentials: 'include'
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error);
-
-                console.log("Storefront login successful. Re-checking auth...");
-                // On success, call checkAuth() to fetch user data and show dashboard
-                await this.checkAuth();
-                
-            } catch (error) {
-                console.error("Storefront login failed:", error);
-                this.showError(error.message || 'Invalid login credentials.');
-                button.classList.remove('loading'); button.disabled = false;
-            }
-        }
-
-        async handleRegister(event) {
-            event.preventDefault();
-            const name = document.getElementById('registerName').value.trim();
-            const email = document.getElementById('registerEmail').value.trim();
-            const phone = document.getElementById('registerPhone').value.trim();
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('registerConfirmPassword').value;
-            const button = event.target.querySelector('.submit-btn');
-
-            // --- Validation ---
-            if (!name || !email || !phone || !password || !confirmPassword) { this.showError('Please fill in all fields.'); return; }
-            if (password !== confirmPassword) { this.showError('Passwords do not match.'); return; }
-            if (password.length < 6) { this.showError('Password must be at least 6 characters long.'); return; }
-            if (!/\S+@\S+\.\S+/.test(email)) { this.showError('Please enter a valid email address.'); return; }
-            // --- End Validation ---
-
-            button.classList.add('loading'); button.disabled = true; this.hideError();
-
-            try {
-                // Call YOUR backend's /store/register route
-                const response = await fetch(`${this.API_URL}/store/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, phone, password }),
-                    credentials: 'include'
-                });
-                
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error);
-
-                // --- Registration Complete ---
-                alert(result.message || "Registration successful! Please check your email to confirm.");
-                this.switchTab('login'); // Switch back to login
-
-            } catch (error) {
-                 console.error("Registration process failed:", error);
-                 this.showError(error.message || 'Registration failed.');
-            } finally {
-                button.classList.remove('loading');
-                button.disabled = false;
-            }
-        }
-
-        async logout() {
-            console.log("Attempting storefront logout...");
-            if (!confirm('Are you sure you want to logout?')) return;
+    async init() {
+        console.log("Initializing Storefront Account Page...");
+        this.setupForms();
+        await this.checkAuth(); 
+    }
+    
+    async checkAuth() {
+        try {
+            const response = await fetch(`${this.API_URL}/store/me`, {
+                credentials: 'include' // ⚠️ REQUIRED to send HttpOnly cookies
+            });
             
-            try {
-                await fetch(`${this.API_URL}/store/logout`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-            } catch (error) {
-                console.error("Logout error:", error);
-            }
+            if (!response.ok) throw new Error('No session');
             
-            // Manually clear state and show auth view
+            const { user } = await response.json();
+            if (user) {
+                this.currentUser = user;
+                this.userProfile = user.profile;
+                this.showDashboard();
+            } else {
+                this.handleUserLoggedOut();
+            }
+        } catch (error) {
             this.handleUserLoggedOut();
-        }
-
-        async fetchUserProfile(userId) {
-             // This function is no longer needed here,
-             // as /store/me returns the full profile data.
-             // We keep it empty in case it's called elsewhere,
-             // but handleUserLoggedIn now gets the profile.
-        }
-
-        showAuthView() {
-            document.getElementById('authView').style.display = 'block';
-            document.getElementById('dashboardView').style.display = 'none';
-        }
-
-        showDashboard() {
-             if (!this.currentUser) {
-                 console.error("Cannot show dashboard, currentUser is null.");
-                 this.showAuthView(); return;
-             }
-             console.log("Showing Storefront Dashboard for:", this.currentUser.email);
-            document.getElementById('authView').style.display = 'none';
-            document.getElementById('dashboardView').style.display = 'block';
-
-            const authUser = this.currentUser;
-            const profile = this.userProfile || {}; // Profile is nested inside currentUser now
-
-            const displayName = profile.name || authUser.email || 'Valued Customer';
-            const displayPhone = profile.phone || '-';
-            const displayEmail = authUser.email || profile.email || '-';
-            const memberDate = authUser.created_at ? new Date(authUser.created_at) : null;
-            const displayMemberSince = memberDate ? memberDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '-';
-
-            document.getElementById('userName').textContent = displayName.split(' ')[0];
-            document.getElementById('displayName').textContent = displayName;
-            document.getElementById('displayEmail').textContent = displayEmail;
-            document.getElementById('displayPhone').textContent = displayPhone;
-            document.getElementById('displayMemberSince').textContent = displayMemberSince;
-
-             console.log("Storefront user role:", profile.role);
-            this.loadOrders();
-        }
-
-        loadOrders() {
-            // Placeholder
-            const orders = [];
-            const container = document.getElementById('ordersContainer');
-             if (orders.length === 0) {
-                 container.innerHTML = `<div class="empty-orders"><div class.empty-orders-icon">📦</div><p>No orders yet</p></div>`;
-                 document.getElementById('totalOrders').textContent = '0';
-                 document.getElementById('totalSpent').textContent = '$0.00';
-             }
-        }
-
-        showError(message) {
-            const errorEl = document.getElementById('errorMessage');
-            errorEl.textContent = message; errorEl.classList.add('show');
-        }
-        hideError() {
-            document.getElementById('errorMessage').classList.remove('show');
         }
     }
 
-    // --- Initialize the App ---
-    document.addEventListener('DOMContentLoaded', () => {
+    setupForms() {
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        if (loginForm) loginForm.addEventListener('submit', this.handleLogin);
+        if (registerForm) registerForm.addEventListener('submit', this.handleRegister);
+    }
+
+    switchTab(tab) {
+        document.querySelectorAll('.auth-tab').forEach(btn => btn.classList.remove('active'));
+        const clickedButton = document.querySelector(`.auth-tab[onclick*="'${tab}'"]`);
+        if (clickedButton) clickedButton.classList.add('active');
+
+        document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+        const targetForm = document.getElementById(tab === 'login' ? 'loginForm' : 'registerForm');
+        if (targetForm) targetForm.classList.add('active');
+        this.hideError();
+    }
+
+    handleUserLoggedOut() {
+        this.currentUser = null;
+        this.userProfile = null;
+        this.showAuthView();
+        document.getElementById('loginForm')?.reset();
+        document.getElementById('registerForm')?.reset();
+    }
+
+    async handleLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const button = event.target.querySelector('.submit-btn');
+
+        if (!email || !password) { this.showError('Please enter both email and password.'); return; }
+        button.classList.add('loading'); 
+        button.disabled = true; 
+        this.hideError();
+
         try {
-            window.accountPage = new AccountPage();
-            console.log("Storefront AccountPage instance created.");
+            const response = await fetch(`${this.API_URL}/store/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+                credentials: 'include' // ⚠️ REQUIRED to receive the sf-token cookie
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+
+            // Successfully logged in, now refresh data
+            await this.checkAuth();
+            
         } catch (error) {
-             console.error("Failed to initialize Storefront AccountPage:", error);
+            this.showError(error.message || 'Invalid login credentials.');
+            button.classList.remove('loading'); 
+            button.disabled = false;
         }
-    });
+    }
+
+    async handleRegister(event) {
+        event.preventDefault();
+        const name = document.getElementById('registerName').value.trim();
+        const email = document.getElementById('registerEmail').value.trim();
+        const phone = document.getElementById('registerPhone').value.trim();
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('registerConfirmPassword').value;
+        const button = event.target.querySelector('.submit-btn');
+
+        if (password !== confirmPassword) { this.showError('Passwords do not match.'); return; }
+        if (password.length < 6) { this.showError('Password must be at least 6 characters.'); return; }
+
+        button.classList.add('loading'); 
+        button.disabled = true; 
+        this.hideError();
+
+        try {
+            const response = await fetch(`${this.API_URL}/store/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, password })
+            });
+            
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+
+            alert(result.message || "Success! Check your email to confirm your account.");
+            this.switchTab('login');
+
+        } catch (error) {
+             this.showError(error.message || 'Registration failed.');
+        } finally {
+            button.classList.remove('loading');
+            button.disabled = false;
+        }
+    }
+
+    async logout() {
+        if (!confirm('Are you sure you want to logout?')) return;
+        try {
+            await fetch(`${this.API_URL}/store/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
+        this.handleUserLoggedOut();
+    }
+
+    showAuthView() {
+        document.getElementById('authView').style.display = 'block';
+        document.getElementById('dashboardView').style.display = 'none';
+    }
+
+    showDashboard() {
+        if (!this.currentUser) return;
+        document.getElementById('authView').style.display = 'none';
+        document.getElementById('dashboardView').style.display = 'block';
+
+        const profile = this.userProfile || {};
+        const displayName = profile.name || this.currentUser.email;
+
+        document.getElementById('userName').textContent = displayName.split(' ')[0];
+        document.getElementById('displayName').textContent = displayName;
+        document.getElementById('displayEmail').textContent = profile.email || this.currentUser.email;
+        document.getElementById('displayPhone').textContent = profile.phone || '-';
+        
+        if (this.currentUser.created_at) {
+            const date = new Date(this.currentUser.created_at);
+            document.getElementById('displayMemberSince').textContent = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+        this.loadOrders();
+    }
+
+    loadOrders() {
+        const container = document.getElementById('ordersContainer');
+        container.innerHTML = `<div class="empty-orders"><div class="empty-orders-icon">📦</div><p>No orders yet</p></div>`;
+    }
+
+    showError(message) {
+        const errorEl = document.getElementById('errorMessage');
+        errorEl.textContent = message; 
+        errorEl.classList.add('show');
+    }
+    
+    hideError() {
+        document.getElementById('errorMessage').classList.remove('show');
+    }
+}
+
+// --- Initialize ---
+document.addEventListener('DOMContentLoaded', () => {
+    window.accountPage = new AccountPage();
+});
+
+
 </script>
 </body>
 </html>
