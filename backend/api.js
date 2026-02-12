@@ -15,7 +15,13 @@ dotenv.config();
 const app = express();
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+    console.error("🚨 Missing Supabase Environment Variables!");
+}
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
 
 // --- Middleware ---
 app.use(cors({
