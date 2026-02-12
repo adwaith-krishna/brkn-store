@@ -32,15 +32,16 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // --- Serve Static Files ---
-app.use(express.static(__dirname));
+
+app.use(express.static(path.join(__dirname, '..')));
 
 // --- Frontend Routes ---
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'brkn_website.html'));
+    res.sendFile(path.join(__dirname, '..', 'brkn_website.html'));
 });
 
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
+    res.sendFile(path.join(__dirname, '..', 'login.html'));
 });
 
 console.log("✅ Express middleware and static routing configured.");
